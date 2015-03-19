@@ -27,6 +27,8 @@ function REsamp=ResampleFieldGeneral(data_real,t_real,z_real,SP)
 % zmat          :[MM X NN X Nshift]
 % tmat          :[MM X NN X Nshift]
 %
+% * To DO : also make function for resampling at each phase
+%
 % Dependencies:
 % MakeProfPath.m
 %
@@ -41,13 +43,6 @@ function REsamp=ResampleFieldGeneral(data_real,t_real,z_real,SP)
 if ~exist('SP','var')
     SP=struct();
 end
-
-%SP.w_samp=0.5;
-%SP.dz_samp=10;
-%SP.z_range=z_range;
-%SP.t_start=t_start;
-%SP.time_range=time_range;
-%SP.plotit=0;
 
 if ~isfield(SP,'w_samp')
     SP.w_samp=0.25;
@@ -112,54 +107,9 @@ for whcase=1:Nshift
     
     clear t0 time_range tmat zmat Nprof Nz
     t0=SP.t_start + (whcase-1)*SP.tshift;
-    %    [tmat,zmat]=MakeProfPath(t0,z_range,dz_samp,time_range,w_samp,plotit);
     [tmat,zmat]=MakeProfPath(t0,SP.z_range,SP.dz_samp,SP.time_range,SP.w_samp,SP.plotit);
-    Nprof=size(zmat,2);
-    Nz=size(zmat,1);
     
-    % make empty arrays
-    clear data_resamp t_grid
-    data_resamp=nan*ones(Nz,Nprof);
-    t_grid=nan*ones(1,Nprof);
-    
-    % resample along each profile segment
-    for whp=1:Nprof
-        clear tvec idt datai
-        tvec=tmat(:,whp);
-        idt=isin(t_real,[tvec(1) tvec(end)]);
-        
-        if numel(idt)>2
-        datai= interp2(t_real(idt),z_real,data_real(:,idt),tvec,zmat(:,whp));
-        
-        if nanmean(diff(zmat(:,whp)))<0
-            data_resamp(:,whp)=flipud(datai(:));
-        else
-            data_resamp(:,whp)=datai(:);
-        end
-        t_grid(whp)=nanmean(tvec);
-        
-        else
-            % no good data, just keep nans
-        end
-        
-    end
-    %
-    idtall=isin(t_real,[t_grid(1) t_grid(end)]);
-    
-    if makefig==1
-        figure(1);clf
-        
-        ax1=subplot(211);
-        ezpc(t_real(idtall),z_real,data_real(:,idtall))
-        hold on
-        plot(tmat,zmat,'w-')
-        
-        ax2=subplot(212);
-        ezpc(t_grid,zmat(:,1),data_resamp)
-        xlabel('Yearday')
-        ylabel('Depth')
-        linkaxes([ax1 ax2])
-    end
+    [data_resamp, t_grid]=ResampleFieldOnePath(t_real,z_real,data_real,tmat,zmat,makefig);
     
     REsamp.data_resamp(:,:,whcase)=data_resamp;
     REsamp.tsamp(:,:,whcase)=tmat;
@@ -175,13 +125,4 @@ REsamp.MakeInfo=['Made ' datestr(now) ' w/ ResampleFieldGeneral.m in vers ' vers
 REsamp.SP=SP;
 
 return
-%%
-
-% figure(2);clf
-% ezpc(REsamp.tgrid(10,:),REsamp.z,REsamp.data_resamp(:,:,10))
-
-%%
-
-% REsamp=AddOverturnsToREsamp(REsamp)
-
 %%
