@@ -31,6 +31,7 @@ function REsamp=ResampleFieldGeneral(data_real,t_real,z_real,SP)
 %
 % Dependencies:
 % MakeProfPath.m
+% ResampleFieldOnePath.m
 %
 % 17 Mar. 2015 - A. Pickering - andypicke@gmail.com
 %
